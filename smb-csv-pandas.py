@@ -58,7 +58,7 @@ df_meta.plot(ax=plt.gca(), x='longitude', y='latitude',
 # first we can look at which references start with "Lewis"
 print(df_references.loc[df_references.reference.str.startswith('Lewis')])
 # we then use the key for Lewis et al. (2017)
-df_selec = df_meta.loc[df_meta.reference_key == 182, :].copy()
+df_selec = df_meta.loc[df_meta.reference_key == 159, :].copy()
 
 gdf = (
     gpd.GeoDataFrame(df_selec, geometry=gpd.points_from_xy(df_selec.longitude, df_selec.latitude))
@@ -124,7 +124,7 @@ import matplotlib
 cmap = matplotlib.cm.get_cmap('tab10')
 
 plt.figure()
-for count, ref in enumerate(df_meta_selec.reference_short.unique()[[0]]):
+for count, ref in enumerate(df_meta_selec.reference_short.unique()):
     label = ref
     for n in df_meta_selec.loc[df_meta_selec.reference_short==ref, 'name'].unique():
         df_stack = (df_sumup.loc[df_sumup.name==n,['start_year','end_year']]

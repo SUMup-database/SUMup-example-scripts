@@ -18,21 +18,19 @@ df_methods = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_
                          sep='\t').set_index('key')
 df_names = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_profile_names.tsv', 
                          sep='\t').set_index('key')
-df_methods = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_methods.tsv', 
-                         sep='\t').set_index('key')
 df_references = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_references.tsv', 
                          sep='\t').set_index('key')
 
 # % creating a metadata frame 
 # that contains the important information of all unique locations
-df_meta = df_density[['profile','latitude','longitude','reference','method']].drop_duplicates()
-df_meta['profile_name'] = df_names.loc[df_meta.profile.values].profile.values
-df_meta['method_str'] = df_methods.loc[df_meta.method].method.values
-df_meta['reference_full'] = df_references.loc[df_meta.reference].reference.values
-df_meta['reference_short'] = df_references.loc[df_meta.reference].reference_short.values
-df_meta = df_meta.set_index('profile')
+df_meta = df_density[['profile_key','latitude','longitude','reference_key','method_key']].drop_duplicates()
+df_meta['profile_name'] = df_names.loc[df_meta.profile_key.values].profile.values
+df_meta['method'] = df_methods.loc[df_meta.method_key].method.values
+df_meta['reference'] = df_references.loc[df_meta.reference_key].reference.values
+df_meta['reference_short'] = df_references.loc[df_meta.reference_key].reference_short.values
+df_meta = df_meta.set_index('profile_key')
 # df_meta.loc[df_names.loc[df_meta.profile.values].index.duplicated(), :]
-# df_density.loc[df_density.profile == 1969,['profile','latitude','longitude','reference','method']].drop_duplicates()
+# df_density.loc[df_density.profile_key == 1969,['profile_key','latitude','longitude','reference','method']].drop_duplicates()
 
 # %% plotting latitude lontgitudes
 df_meta[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
@@ -40,8 +38,8 @@ df_meta[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
 # %% plotting the 10 first profiles
 for ind in df_meta.index[:10]:
     plt.figure()
-    df_density.loc[df_density.profile==ind,
-            ['density', 'midpoint', 'profile']
+    df_density.loc[df_density.profile_key==ind,
+            ['density', 'midpoint', 'profile_key']
         ].plot.scatter(
             x='density', 
             y='midpoint',
@@ -68,14 +66,14 @@ df_meta_south[['latitude','longitude']].plot(ax=plt.gca(), x='longitude',y='lati
 plt.legend()
 # we can isolate the density data for those southern profiles
 df_density_south = df_density.loc[
-    df_density.profile.isin(df_meta_south.index)].copy()
+    df_density.profile_key.isin(df_meta_south.index)].copy()
 # but we could also continue with df_density and only use profiles from df_meta_south
 
 # %% plotting the 10 first southern profiles
 for ind in df_meta_south.index[:10]:
     plt.figure()
-    df_density.loc[df_density.profile==ind,
-            ['density', 'midpoint', 'profile']
+    df_density.loc[df_density.profile_key==ind,
+            ['density', 'midpoint', 'profile_key']
         ].plot.scatter(
             x='density', 
             y='midpoint',
@@ -157,8 +155,8 @@ plt.legend()
 # plotting profiles
 for ind in ind_list:
     plt.figure()
-    df_density.loc[df_density.profile==ind,
-            ['density', 'midpoint', 'profile']
+    df_density.loc[df_density.profile_key==ind,
+            ['density', 'midpoint', 'profile_key']
         ].plot.scatter(
             x='density', 
             y='midpoint',
@@ -178,8 +176,8 @@ ref_target = 'GEUS snow and firn data (2023)'
 
 df_meta_geus = df_meta.loc[df_meta.reference_short==ref_target]
 
-tmp = df_density.loc[df_density.profile.isin(df_meta_geus.index), 
-                     ['profile', 'timestamp']].drop_duplicates().set_index('profile')
+tmp = df_density.loc[df_density.profile_key.isin(df_meta_geus.index), 
+                     ['profile_key', 'timestamp']].drop_duplicates().set_index('profile_key')
 
 # plotting them on a map
 df_meta_geus[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
@@ -223,7 +221,7 @@ ax=ax.flatten()
 count=0
 for ind in df_meta_geus.index:
     print(df_meta_geus.loc[ind,'profile_name'])
-    df_density.loc[df_density.profile==ind,
+    df_density.loc[df_density.profile_key==ind,
             ['density', 'midpoint']
         ].plot(
             drawstyle="steps-mid",
@@ -254,7 +252,7 @@ ax[0].invert_yaxis()
 count=0
 for ind in df_meta_geus_cores.index:
     print(df_meta_geus_cores.loc[ind,'profile_name'])
-    df_density.loc[df_density.profile==ind,
+    df_density.loc[df_density.profile_key==ind,
             ['density', 'midpoint']
         ].sort_values(by='midpoint').plot(
             drawstyle="steps-mid",
@@ -267,7 +265,7 @@ for ind in df_meta_geus_cores.index:
     ax[count].set_ylabel('Depth (m)')
     ax[count].grid()
     ax[count].get_legend().remove()
-    ax[count].set_title(df_meta_geus.loc[ind,'profile_name'] + ' '+ str(df_meta_geus.loc[ind,'date'][:4]),
+    ax[count].set_title(df_meta_geus.loc[ind,'profile_name'],
         fontsize=11)
     count += 1
     if count ==len(ax):
