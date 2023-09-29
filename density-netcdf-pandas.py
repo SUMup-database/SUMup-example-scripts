@@ -7,28 +7,40 @@ tip list:
     %matplotlib qt
     import pdb; pdb.set_trace()
 """
-import pandas as pd
+import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
 
 path_to_SUMup_folder = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/SUMup 2023 beta/'
 
-df_density = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_greenland.csv')
-df_methods = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_methods.tsv', 
-                         sep='\t').set_index('key')
-df_names = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_profile_names.tsv', 
-                         sep='\t').set_index('key')
-df_references = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_references.tsv', 
-                         sep='\t').set_index('key')
+df_density = xr.open_dataset(path_to_SUMup_folder + 'density/netcdf/SUMup_2023_density_greenland.nc', group='DATA').to_dataframe()
+
+ds_meta = xr.open_dataset(path_to_SUMup_folder + 'density/netcdf/SUMup_2023_density_greenland.nc', group='METADATA')
+# ds_meta contain the meaning of profile_key, reference_key, method_key being
+# used in df_density
 
 # % creating a metadata frame 
-# that contains the important information of all unique locations
-df_meta = df_density[['profile_key','latitude','longitude','reference_key','method_key']].drop_duplicates()
-df_meta['profile_name'] = df_names.loc[df_meta.profile_key.values].profile.values
-df_meta['method'] = df_methods.loc[df_meta.method_key].method.values
-df_meta['reference'] = df_references.loc[df_meta.reference_key].reference.values
-df_meta['reference_short'] = df_references.loc[df_meta.reference_key].reference_short.values
+# that contains, for each unique location, the important information
+# (lat/lon, reference...)
+df_meta = df_density[
+    ['profile_key','latitude','longitude','timestamp','reference_key','method_key']
+    ].drop_duplicates()
+
+df_meta['profile_name'] = (ds_meta.profile
+                           .loc[dict(profile_key= df_meta.profile_key.values)]
+                                     .values)
+df_meta['method'] = (ds_meta.method
+                     .drop_duplicates(dim='method_key')  # this is due to a bug, will be fixed soon
+                     .loc[dict(method_key= df_meta.method_key.values)]
+                     .values)
+df_meta['reference'] = (ds_meta.reference
+                        .loc[dict(reference_key= df_meta.reference_key.values)]
+                        .values)
+df_meta['reference_short'] = (ds_meta.reference_short
+                              .loc[dict(reference_key= df_meta.reference_key.values)]
+                              .values)
 df_meta = df_meta.set_index('profile_key')
+
 
 # %% plotting latitude lontgitudes
 df_meta[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
