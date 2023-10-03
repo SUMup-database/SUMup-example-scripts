@@ -16,7 +16,7 @@ Example scripts to read, process and plot the SUMup 2023 dataset
 </h1>
 
 ## Python scripts available:
-- [Density: reading NetCDF file with xarray](density-netcdf-xarray.py)
+- [Density: reading NetCDF file with pandas](density-netcdf-pandas.py)
 - [Density: reading CSV file with pandas](density-csv-pandas.py)
 - [Density: Jupyter notebook to read NetCDF files](jupyter-notebook-density.ipynb)
 - [SMB: reading CSV file with pandas](smb-csv-pandas.py)
