@@ -14,26 +14,22 @@ import xarray as xr
 import geopandas as gpd
 
 path_to_sumup = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
-df_sumup = (pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_greenland.csv',
-                        low_memory=False)
-            .rename(columns=dict(name='name_key', method='method_key', reference='reference_key')))
-
-
-df_methods = pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_methods.tsv', 
-                         sep='\t').set_index('key').method
-df_names = pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_names.tsv', 
-                         sep='\t').set_index('key').name
-df_references = pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_references.tsv', 
-                         sep='\t').set_index('key')
-    
-df_sumup.loc[df_sumup.method_key.isnull(), 'method_key'] = -9999
-df_sumup['method'] = df_methods.loc[df_sumup.method_key].values
-df_sumup['name'] = df_names.loc[df_sumup.name_key].values
-df_sumup['reference'] = df_references.loc[df_sumup.reference_key, 'reference'].values
-df_sumup['reference_short'] = df_references.loc[df_sumup.reference_key, 'reference_short'].values
-
-df_references.reference.loc[df_references.index.duplicated()]
-
+df_sumup = xr.open_dataset(path_to_sumup+'SUMup 2023 beta/SMB/netcdf/SUMup_2023_SMB_greenland.nc', 
+                           group='DATA').to_dataframe()
+ds_meta = xr.open_dataset(path_to_sumup+'SUMup 2023 beta/SMB/netcdf/SUMup_2023_SMB_greenland.nc', 
+                           group='METADATA')
+df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
+df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
+df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values).astype(str)
+df_sumup['reference'] = (ds_meta.reference
+                         .drop_duplicates(dim='reference_key')
+                         .sel(reference_key=df_sumup.reference_key.values)
+                         .astype(str))
+df_sumup['reference_short'] = (ds_meta.reference_short
+                         .drop_duplicates(dim='reference_key')
+                         .sel(reference_key=df_sumup.reference_key.values)
+                         .astype(str))
+df_ref = ds_meta.reference.to_dataframe()
 
 # selecting Greenland metadata measurements
 df_meta = df_sumup.loc[df_sumup.latitude>0, 
@@ -51,14 +47,20 @@ ice.to_crs(4326).plot(ax=plt.gca(),color='lightblue')
 df_meta.plot(ax=plt.gca(), x='longitude', y='latitude', 
         color='k', marker='.',ls='None', legend=False) 
 
+# %% Listing available source
+
+print(df_ref.to_markdown())
+
 # %% Source selection and plotting in EPSG:3413 
 # Note: the repojection of all the data points take a very long time
 
+
+# selecting PARCA cores using key-word in the reference field
+df_selec = df_meta.loc[df_meta.reference.str.startswith('Mosley') \
+    | df_meta.reference.str.startswith('Bales'), :].copy()
+
 # selecting Lewis airborne radar data using reference key
-# first we can look at which references start with "Lewis"
-print(df_references.loc[df_references.reference.str.startswith('Lewis')])
-# we then use the key for Lewis et al. (2017)
-df_selec = df_meta.loc[df_meta.reference_key == 159, :].copy()
+# df_selec = df_meta.loc[df_meta.reference_key == 138, :].copy()
 
 gdf = (
     gpd.GeoDataFrame(df_selec, geometry=gpd.points_from_xy(df_selec.longitude, df_selec.latitude))
@@ -107,7 +109,7 @@ df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, g
 min_dist = 20 # in km
 df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]   
 
-# plotting coordinates
+# %% plotting coordinates
 plt.figure()
 df_meta[['latitude','longitude']].plot.scatter(ax=plt.gca(),
                                                x='longitude',y='latitude')
@@ -124,6 +126,7 @@ import matplotlib
 cmap = matplotlib.cm.get_cmap('tab10')
 
 plt.figure()
+
 for count, ref in enumerate(df_meta_selec.reference_short.unique()):
     # each reference will be plotted in a different color
     label = ref
@@ -134,7 +137,7 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
                     .sort_values(by='start_year')
                     .stack().reset_index().drop(columns='level_1')
                     .rename(columns={0:'year'}))
-        df_stack['smb'] = df_sumup.loc[df_stack.level_0, 'smb'].values
+        df_stack['smb'] = df_sumup.loc[df_stack.measurement_id, 'smb'].values
         df_stack.plot(ax=plt.gca(), x='year', y='smb',
                       color = cmap(count),
                       label=label, alpha=0.7, legend=False
