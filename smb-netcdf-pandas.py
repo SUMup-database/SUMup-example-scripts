@@ -146,3 +146,38 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
         plt.ylabel('SMB (m w.e. yr-1)')
         label='_nolegend_'
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
+
+# %% selecting a given method
+# displaying available methods
+df_methods = ds_meta.method.to_dataframe()
+print(df_methods.to_markdown())
+
+# selecting the method keys containing 'pit' or 'core'
+keys_cores_pits = df_methods.loc[
+    df_methods.method.str.contains('pit') | df_methods.method.str.contains('core')].index.values
+
+# selecting the observations that have method_key in keys_cores_pits
+df_selec = df_sumup.loc[df_sumup.method_key.isin(keys_cores_pits)]
+
+# adding spelled-out versions of keys to df_selec
+df_selec['method'] = ds_meta.method.sel(method_key = df_selec.method_key.values).astype(str)
+df_selec['name'] = ds_meta.name.sel(name_key = df_selec.name_key.values).astype(str)
+df_selec['reference'] = (ds_meta.reference
+                         .sel(reference_key=df_selec.reference_key.values)
+                         .astype(str))
+df_selec['reference_short'] = (ds_meta.reference_short
+                         .sel(reference_key=df_selec.reference_key.values)
+                         .astype(str))
+print('Table contains the following columns')
+print(df_selec.columns.values)
+
+print('\n using the following methods')
+print(df_selec.method.drop_duplicates().values)
+
+print('\n and contains the following profiles')
+print(df_selec.name.drop_duplicates().values)
+
+print('\n from the following references')
+print(df_selec.reference.drop_duplicates().values)
+
+
