@@ -13,10 +13,10 @@ import numpy as np
 import xarray as xr
 import geopandas as gpd
 
-path_to_SUMup_folder = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
-df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2023 beta/temperature/netcdf/SUMup_2023_temperature_greenland.nc', 
+path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
+df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc', 
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2023 beta/temperature/netcdf/SUMup_2023_temperature_greenland.nc', 
+ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc', 
                            group='METADATA')
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
@@ -156,4 +156,14 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),title='Sources:')
         plt.ylabel('temperature (°C)')
         label='_nolegend_'
+plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
+
+# %% plotting 2D
+df_sumup_selec = df_sumup.loc[df_sumup.name.isin(df_meta_selec.name)]
+plt.figure()
+sc = plt.scatter(df_sumup_selec.timestamp,
+                 -df_sumup_selec.depth, 50, 
+                 df_sumup_selec.temperature)
+plt.colorbar(sc)
+plt.grid()
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))

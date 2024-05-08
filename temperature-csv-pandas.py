@@ -11,19 +11,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd
-path_to_SUMup_folder = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
+path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
 
-df_sumup = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_greenland.csv')
+df_sumup = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_greenland.csv')
 df_sumup = df_sumup.rename(columns={'name':'name_key',
                             'reference':'reference_key',
                             'method':'method_key'})
 df_sumup['timestamp'] = pd.to_datetime(df_sumup.timestamp)
 
-df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_methods.tsv', 
+df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_methods.tsv', 
                          sep='\t').set_index('key')
-df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_names.tsv', 
+df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_names.tsv', 
                          sep='\t').set_index('key')
-df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_references.tsv', 
+df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_references.tsv', 
                          sep='\t').set_index('key')
 
 # % creating a metadata frame 
