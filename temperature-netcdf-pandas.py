@@ -118,7 +118,10 @@ def get_distance(point1, point2):
     distance = R * c
     return distance
 
-query_point = [[77.1667, -61.1333]] # Camp Century
+query_point = [
+                # [77.1667, -61.1333], # Camp Century
+                [66.4823, -46.2908], # DYE-2
+               ]
 all_points = df_meta[['latitude', 'longitude']].values
 df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, get_distance)
 min_dist = 20 # in km
