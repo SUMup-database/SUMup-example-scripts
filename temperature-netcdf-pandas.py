@@ -14,9 +14,9 @@ import xarray as xr
 import geopandas as gpd
 
 path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
-df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc', 
+df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc', 
+ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
                            group='METADATA')
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
@@ -32,7 +32,7 @@ df_sumup['reference_short'] = (ds_meta.reference_short
 df_ref = ds_meta.reference.to_dataframe()
 
 # selecting Greenland metadata measurements
-df_meta = df_sumup.loc[df_sumup.latitude>0, 
+df_meta = df_sumup.loc[df_sumup.latitude>0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
@@ -56,7 +56,7 @@ df_meta.loc[df_meta.latitude>0, ['latitude','longitude']].plot.scatter(
 # df_meta.loc[df_meta.latitude<0, ['latitude','longitude']].plot.scatter(
 #     ax=plt.gca(), x='longitude',y='latitude', color='k', marker='.')
 
-# %% Plotting in EPSG:3413 
+# %% Plotting in EPSG:3413
 # Note: the repojection of all the data points take a very long time
 df_gr =df_meta.loc[df_meta.latitude>0]
 
@@ -73,8 +73,8 @@ plt.figure()
 ax=plt.gca()
 land.plot(ax=ax)
 ice.plot(ax=ax,color='lightblue')
-df_gr.plot(ax=ax,  
-        color='k', marker='.', legend=False) 
+df_gr.plot(ax=ax,
+        color='k', marker='.', legend=False)
 ax.set_xticks([])
 ax.set_yticks([])
 
@@ -93,8 +93,8 @@ ax.set_yticks([])
 # plt.figure()
 # ax=plt.gca()
 # ant_land.to_crs(3031).plot(ax=ax, color='lightblue')
-# df_ant.plot(ax=ax,  
-#         color='k', marker='.', legend=False) 
+# df_ant.plot(ax=ax,
+#         color='k', marker='.', legend=False)
 # ax.set_xticks([])
 # ax.set_yticks([])
 
@@ -119,13 +119,13 @@ def get_distance(point1, point2):
     return distance
 
 query_point = [
-                # [77.1667, -61.1333], # Camp Century
-                [66.4823, -46.2908], # DYE-2
+                [77.1667, -61.1333], # Camp Century
+                # [66.4823, -46.2908], # DYE-2
                ]
 all_points = df_meta[['latitude', 'longitude']].values
 df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, get_distance)
 min_dist = 20 # in km
-df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]   
+df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]
 
 # plotting coordinates
 plt.figure()
@@ -134,7 +134,7 @@ df_meta[['latitude','longitude']].plot.scatter(ax=plt.gca(),
                                                marker='.',
                                                label='all points')
 plt.gca().plot(np.array(query_point)[:,1],
-            np.array(query_point)[:,0], marker='^', 
+            np.array(query_point)[:,0], marker='^',
             ls='None', label='target',
             color='tab:red')
 df_meta_selec.plot(ax=plt.gca(), x='longitude', y='latitude',
@@ -165,8 +165,120 @@ plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
 df_sumup_selec = df_sumup.loc[df_sumup.name.isin(df_meta_selec.name)]
 plt.figure()
 sc = plt.scatter(df_sumup_selec.timestamp,
-                 -df_sumup_selec.depth, 50, 
+                 -df_sumup_selec.depth, 50,
                  df_sumup_selec.temperature)
 plt.colorbar(sc)
 plt.grid()
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
+
+# %% Interpoalting temperature at fixed depth
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+
+# Ignore FutureWarnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+# Assuming df_sumup is your DataFrame
+
+# Set the depth for interpolation
+target_depth = 20
+min_depth_pairs = 2  # Minimum number of depth-temperature pairs required for interpolation
+
+# Create a new DataFrame for interpolated temperatures
+df_interpolated = pd.DataFrame()
+
+# Interpolate temperature at 10 m depth for each name_key and timestamp
+for n in df_meta_selec['name_key'].unique():
+    df_subset = df_sumup[df_sumup['name_key'] == n]
+    print(df_subset.name.drop_duplicates().values[0])
+
+    # Check if there are enough depth-temperature pairs
+    if df_subset.shape[0] < min_depth_pairs:
+        if target_depth in df_subset.depth.values:
+            temp_at_target_depth = df_subset.loc[df_subset.depth==target_depth,:]
+            df_interpolated = pd.concat([df_interpolated, temp_at_target_depth], ignore_index=True)
+        else:
+            print(f"Target depth not in {df_subset.name.drop_duplicates().values[0]} and only {df_subset.shape[0]} values to interpolate from. Skipping.")
+            continue
+
+
+    # Set the index to a MultiIndex of timestamp and depth
+    df_subset = df_subset.set_index(['timestamp', 'depth'])
+
+    # Create a range of timestamps for interpolation
+    timestamps = df_subset.index.levels[0]
+
+    if df_subset.index.get_level_values(1).max()<(target_depth-2):
+        continue
+    # Interpolate for each timestamp
+    for timestamp in timestamps:
+        df_time_subset = df_subset.xs(timestamp, level='timestamp')[['temperature']]
+        if df_time_subset.shape[0] < min_depth_pairs:
+            continue        # Check if we can interpolate
+
+        if df_time_subset.index[0] == target_depth:
+            df_time_subset = df_time_subset.iloc[1:]
+
+        # Add target depth if not present
+        if target_depth not in df_time_subset.index.values:
+            new_row = pd.Series({'temperature': np.nan}, name=target_depth)
+            df_time_subset = pd.concat([df_time_subset, new_row.to_frame().T])  # Add new row
+
+        # Interpolating temperature at 10 m depth
+        interp_temp = df_time_subset['temperature'].interpolate(method='index') #.interpolate(method='index')
+
+        # Check if the interpolated temperature exists for the target depth
+        if target_depth in interp_temp.index:
+            temp_at_target_depth = pd.DataFrame()
+            temp_at_target_depth['depth'] = [target_depth]
+            temp_at_target_depth['temperature'] = np.unique(interp_temp.loc[target_depth])
+            temp_at_target_depth['name_key'] = n
+            temp_at_target_depth['name'] = df_subset.name.drop_duplicates().values[0]
+            temp_at_target_depth['timestamp'] = timestamp
+
+            df_interpolated = pd.concat([df_interpolated, temp_at_target_depth], ignore_index=True)
+        else:
+            print(f"Temperature at {target_depth} m not found for {n} at {timestamp}.")
+
+# %% Plotting interpolated temperature
+plt.figure()
+cmap = plt.get_cmap("tab10")  # Change to your desired colormap
+
+for count, n in enumerate(df_interpolated['name_key'].unique()):
+    df_temp = df_interpolated[df_interpolated['name_key'] == n]
+
+    # Calculate the rolling mean
+    if len(df_temp['temperature'])>7:
+        df_temp['temperature'] = df_temp['temperature'].rolling(7).mean()
+
+    # Remove NaN values introduced by rolling mean
+    df_temp = df_temp.dropna(subset=['temperature'])
+
+    # Plot the rolling mean
+    plt.plot(df_temp['timestamp'], df_temp['temperature'],
+             color=cmap(count), marker='o', linestyle='None',
+             label=df_temp.name.iloc[0], alpha=0.7)
+
+    # Fit a linear regression
+    if (df_temp['timestamp'].max() - df_temp['timestamp'].min())>pd.to_timedelta('1000 days'):
+        x = pd.to_numeric(df_temp['timestamp'])  # Convert timestamps to numeric values for regression
+        y = df_temp['temperature']
+        slope, intercept = np.polyfit(x, y, 1)  # Linear regression
+
+        # Convert slope to °C per decade
+        slope_per_decade = slope * (10 * 365.25 * 24 * 60 * 60 * 1e9)  # Convert nanoseconds to decades
+
+        # Plot the regression line
+        plt.plot(df_temp['timestamp'], intercept + slope * x,
+                 color=cmap(count), linestyle='-', alpha=0.5,
+                 label= f"{slope_per_decade:.2f} °C/decade")
+
+if count>4:
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),ncols=2, title='Sources:')
+else:
+    plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2), title='Sources:')
+plt.ylabel(f'Temperature at {target_depth} m (°C)')
+plt.xticks(rotation=45)  # Rotate x-axis labels for better readability
+plt.tight_layout()  # Adjust layout
+plt.show()
