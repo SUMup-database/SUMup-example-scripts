@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import geopandas as gpd
 
-path_to_sumup = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
-df_sumup = xr.open_dataset(path_to_sumup+'SUMup 2023 beta/SMB/netcdf/SUMup_2023_SMB_greenland.nc', 
+path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/'
+df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc', 
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_sumup+'SUMup 2023 beta/SMB/netcdf/SUMup_2023_SMB_greenland.nc', 
+ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc', 
                            group='METADATA')
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
