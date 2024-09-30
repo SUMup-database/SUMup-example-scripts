@@ -171,6 +171,22 @@ plt.colorbar(sc)
 plt.grid()
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
 
+
+# %% Plotting at time slices
+plt.figure()
+for date in ['2017-09-01','2024-09-01']:
+    df_sumup_selec.loc[
+        df_sumup_selec.timestamp == (pd.to_datetime(date)),
+            :].plot(x='temperature',y='depth', marker='o', ls='None',
+                    label=date, ax=plt.gca())
+    plt.legend()
+    plt.ylim(70,0)
+    plt.grid()
+    
+df_sumup_selec.loc[
+    df_sumup_selec.timestamp.isin(pd.to_datetime(['2017-09-01','2024-09-01'])),
+        ['timestamp','depth','temperature']].to_csv('CC_temperature_2017_2024.csv',index=False)
+
 # %% Interpoalting temperature at fixed depth
 import pandas as pd
 import numpy as np
