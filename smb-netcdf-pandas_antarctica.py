@@ -29,7 +29,7 @@ df_sumup['reference_short'] = (ds_meta.reference_short
                          .drop_duplicates(dim='reference_key')
                          .sel(reference_key=df_sumup.reference_key.values)
                          .astype(str))
-df_ref = ds_meta.reference.to_dataframe()
+df_ref = ds_meta[['reference','reference_short']].to_dataframe()
 
 # selecting antarctica metadata measurements
 df_meta = df_sumup.loc[df_sumup.latitude<0,
