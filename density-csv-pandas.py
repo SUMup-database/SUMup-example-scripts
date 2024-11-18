@@ -11,14 +11,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-path_to_SUMup_folder = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/SUMup 2023 beta/'
+path_to_SUMup_folder = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup/SUMup 2023 beta/'
 
-df_density = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_greenland.csv')
-df_methods = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_methods.tsv', 
+df_density = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_greenland.csv')
+df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_methods.tsv', 
                          sep='\t').set_index('key')
-df_names = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_profile_names.tsv', 
+df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_profile_names.tsv', 
                          sep='\t').set_index('key')
-df_references = pd.read_csv(path_to_SUMup_folder + 'density/csv/SUMup_2023_density_references.tsv', 
+df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_references.tsv', 
                          sep='\t').set_index('key')
 
 # % creating a metadata frame 

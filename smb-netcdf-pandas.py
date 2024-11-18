@@ -13,11 +13,16 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import geopandas as gpd
 
-path_to_sumup = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
-df_sumup = xr.open_dataset(path_to_sumup+'SUMup 2023 beta/SMB/netcdf/SUMup_2023_SMB_greenland.nc', 
+path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/'
+df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc',
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_sumup+'SUMup 2023 beta/SMB/netcdf/SUMup_2023_SMB_greenland.nc', 
+ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc',
                            group='METADATA')
+decode_utf8 = np.vectorize(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+for v in ['name','reference','reference_short','method']:
+    ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
+
+
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
 df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values).astype(str)
@@ -32,26 +37,26 @@ df_sumup['reference_short'] = (ds_meta.reference_short
 df_ref = ds_meta.reference.to_dataframe()
 
 # selecting Greenland metadata measurements
-df_meta = df_sumup.loc[df_sumup.latitude>0, 
+df_meta = df_sumup.loc[df_sumup.latitude>0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
 
 # %% plotting in EPSG:4326
-ice = gpd.GeoDataFrame.from_file(path_to_sumup + "doc/GIS/greenland_ice_3413.shp")
-land = gpd.GeoDataFrame.from_file(path_to_sumup + "doc/GIS/greenland_land_3413.shp")
+ice = gpd.GeoDataFrame.from_file("ancil/greenland_ice_3413.shp")
+land = gpd.GeoDataFrame.from_file("ancil/greenland_land_3413.shp")
 
 plt.figure()
 land.to_crs(4326).plot(ax=plt.gca())
 ice.to_crs(4326).plot(ax=plt.gca(),color='lightblue')
-df_meta.plot(ax=plt.gca(), x='longitude', y='latitude', 
-        color='k', marker='.',ls='None', legend=False) 
+df_meta.plot(ax=plt.gca(), x='longitude', y='latitude',
+        color='k', marker='.',ls='None', legend=False)
 
 # %% Listing available source
 
 print(df_ref.to_markdown())
 
-# %% Source selection and plotting in EPSG:3413 
+# %% Source selection and plotting in EPSG:3413
 # Note: the repojection of all the data points take a very long time
 
 
@@ -75,8 +80,8 @@ plt.figure()
 ax=plt.gca()
 land.plot(ax=ax)
 ice.plot(ax=ax,color='lightblue')
-gdf.plot(ax=ax,  
-        color='k', marker='.', legend=False) 
+gdf.plot(ax=ax,
+        color='k', marker='.', legend=False)
 ax.set_xticks([])
 ax.set_yticks([])
 plt.title('\n'.join(df_selec.reference_short.drop_duplicates()))
@@ -107,14 +112,14 @@ query_point = [[75.1, -42.32]] # NGRIP
 all_points = df_meta[['latitude', 'longitude']].values
 df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, get_distance)
 min_dist = 20 # in km
-df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]   
+df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]
 
 # %% plotting coordinates
 plt.figure()
 df_meta[['latitude','longitude']].plot.scatter(ax=plt.gca(),
                                                x='longitude',y='latitude')
 plt.gca().plot(np.array(query_point)[:,1],
-            np.array(query_point)[:,0], marker='^', 
+            np.array(query_point)[:,0], marker='^',
             ls='None', label='target',
             color='tab:red')
 df_meta_selec.plot(ax=plt.gca(), x='longitude', y='latitude',
@@ -179,5 +184,3 @@ print(df_selec.name.drop_duplicates().values)
 
 print('\n from the following references')
 print(df_selec.reference.drop_duplicates().values)
-
-

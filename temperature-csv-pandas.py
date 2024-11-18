@@ -11,19 +11,19 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd
-path_to_SUMup_folder = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
+path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
 
-df_sumup = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_greenland.csv')
+df_sumup = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_greenland.csv')
 df_sumup = df_sumup.rename(columns={'name':'name_key',
                             'reference':'reference_key',
                             'method':'method_key'})
 df_sumup['timestamp'] = pd.to_datetime(df_sumup.timestamp)
 
-df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_methods.tsv', 
+df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_methods.tsv', 
                          sep='\t').set_index('key')
-df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_names.tsv', 
+df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_names.tsv', 
                          sep='\t').set_index('key')
-df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup 2023 beta/temperature/csv/SUMup_2023_temperature_references.tsv', 
+df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_references.tsv', 
                          sep='\t').set_index('key')
 
 # % creating a metadata frame 
@@ -120,7 +120,10 @@ def get_distance(point1, point2):
     distance = R * c
     return distance
 
-query_point = [[77.1667, -61.1333]] # Camp Century
+query_point = [
+                # [77.1667, -61.1333], # Camp Century
+                [66.4823, -46.2933], # DYE-2
+               ]
 all_points = df_meta[['latitude', 'longitude']].values
 df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, get_distance)
 min_dist = 20 # in km
@@ -140,7 +143,7 @@ df_meta_selec.plot(ax=plt.gca(), x='longitude', y='latitude',
               label='closest', marker='d',ls='None', color='tab:orange')
 plt.legend()
 
-# %% plotting individual smb records
+# %% plotting individual temperature records
 import matplotlib
 cmap = matplotlib.cm.get_cmap('tab10')
 
@@ -158,4 +161,14 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
         plt.legend(loc='upper center', bbox_to_anchor=(0.5, -0.2),title='Sources:')
         plt.ylabel('temperature (°C)')
         label='_nolegend_'
+plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
+
+# %% plotting 2D
+df_sumup_selec = df_sumup.loc[df_sumup.name_key.isin(df_meta_selec.index)]
+plt.figure()
+sc = plt.scatter(df_sumup_selec.timestamp.values,
+                 -df_sumup_selec.depth, 50, 
+                 df_sumup_selec.temperature)
+plt.colorbar(sc)
+plt.grid()
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
