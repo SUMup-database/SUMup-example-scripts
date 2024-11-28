@@ -23,6 +23,8 @@ for v in ['name','reference','reference_short','method']:
     ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
 
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
+ds_meta['method_key'] = ds_meta['method_key'].fillna(-9999)
+
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
 df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values).astype(str)
 df_sumup['reference'] = (ds_meta.reference
@@ -40,8 +42,6 @@ df_meta = df_sumup.loc[df_sumup.latitude>0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
-
-
 
 # %% plotting latitude lontgitudes
 ice = gpd.GeoDataFrame.from_file(path_to_SUMup_folder + "doc/GIS/greenland_ice_3413.shp")
