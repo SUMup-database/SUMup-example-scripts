@@ -12,9 +12,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
-df_density = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_density_greenland.nc', group='DATA').to_dataframe()
+df_density = xr.open_dataset(
+    path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_density_greenland.nc',
+    group='DATA').to_dataframe()
 
-ds_meta = xr.open_dataset(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_density_greenland.nc', group='METADATA')
+ds_meta = xr.open_dataset(
+    path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_density_greenland.nc',
+    group='METADATA')
+decode_utf8 = np.vectorize(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+for v in ['profile','reference','reference_short','method']:
+    ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
 # ds_meta contain the meaning of profile_key, reference_key, method_key being
 # used in df_density
 
@@ -233,7 +240,8 @@ df_meta_geus['site'] = df_meta_geus.profile_name.str.split('_').str[1].str.split
 for year in range(2022,2025):
     print(year)
     for site in np.unique(df_meta_geus.loc[df_meta_geus.timestamp.dt.year==year,'site']):
-        tmp_site = tmp.loc[(df_meta_geus.site==site)&(df_meta_geus.timestamp.dt.year==year),:]
+        tmp_site = df_meta_geus.loc[
+            (df_meta_geus.site==site)&(df_meta_geus.timestamp.dt.year==year), :]
         print('    ',site)
         for ind in tmp_site.index:
             print('        ', df_meta_geus.loc[ind,'profile_name'])

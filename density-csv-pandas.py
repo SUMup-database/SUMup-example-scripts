@@ -11,17 +11,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-path_to_SUMup_folder = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup/SUMup 2023 beta/'
+path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/SUMup_2024_density_csv/'
 
-df_density = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_greenland.csv')
-df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_methods.tsv', 
+df_density = pd.read_csv(path_to_sumup + '/SUMup_2024_density_greenland.csv')
+df_methods = pd.read_csv(path_to_sumup + '/SUMup_2024_density_methods.tsv',
                          sep='\t').set_index('key')
-df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_profile_names.tsv', 
+df_names = pd.read_csv(path_to_sumup + '/SUMup_2024_density_profile_names.tsv',
                          sep='\t').set_index('key')
-df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup_2023_density_csv/SUMup_2023_density_references.tsv', 
+df_references = pd.read_csv(path_to_sumup + '/SUMup_2024_density_references.tsv',
                          sep='\t').set_index('key')
 
-# % creating a metadata frame 
+# % creating a metadata frame
 # that contains the important information of all unique locations
 df_meta = df_density[['profile_key','latitude','longitude','reference_key','method_key']].drop_duplicates()
 df_meta['profile_name'] = df_names.loc[df_meta.profile_key.values].profile.values
@@ -39,7 +39,7 @@ for ind in df_meta.index[:10]:
     df_density.loc[df_density.profile_key==ind,
             ['density', 'midpoint', 'profile_key']
         ].plot.scatter(
-            x='density', 
+            x='density',
             y='midpoint',
             )
     plt.gca().invert_yaxis()
@@ -73,7 +73,7 @@ for ind in df_meta_south.index[:10]:
     df_density.loc[df_density.profile_key==ind,
             ['density', 'midpoint', 'profile_key']
         ].plot.scatter(
-            x='density', 
+            x='density',
             y='midpoint',
             )
     plt.gca().invert_yaxis()
@@ -83,7 +83,7 @@ for ind in df_meta_south.index[:10]:
             ind,
             df_meta.loc[ind, 'reference_short'],
             ))
-    
+
 # %% finding the closest profile to given coordinates
 # easiest if you use the following function
 def nearest_latlon_profile(df, points, return_value=True):
@@ -91,12 +91,12 @@ def nearest_latlon_profile(df, points, return_value=True):
 
     if 'lat' in df: df = df.rename(dict(lat='latitude', lon='longitude'))
     if isinstance(points, tuple): points = [points]
-        
+
     xs = []; distances = []  # distance between the pair of points
-    
+
     for point in points:
         assert len(point) == 2, "``points`` should be a tuple or list of tuples (lat, lon)"
-        
+
         p_lat, p_lon = point
         # Find absolute difference between requested point and the grid coordinates.
         abslat = np.abs(df.latitude - p_lat)
@@ -112,7 +112,7 @@ def nearest_latlon_profile(df, points, return_value=True):
         # Matched Grid lat/lon
         g_lat = df.iloc[x,:].latitude
         g_lon = df.iloc[x,:].longitude
-               
+
         R = 6373.0  # approximate radius of earth in km
 
         lat1 = np.deg2rad(p_lat); lon1 = np.deg2rad(p_lon)
@@ -127,7 +127,7 @@ def nearest_latlon_profile(df, points, return_value=True):
         print(point, 'closest to profile',x,' (%0.4f°N, %0.4f°E) %0.4f km away'%(
             g_lat, g_lon, R * c))
     return df.iloc[xs,:].index
-    
+
 coord_list = [(71, -45), (68, -45), (77, -55), (76, -38)]
 ind_list = nearest_latlon_profile(df_meta, coord_list)
 
@@ -135,7 +135,7 @@ ind_list = nearest_latlon_profile(df_meta, coord_list)
 plt.figure()
 df_meta[['latitude','longitude']].plot.scatter(ax=plt.gca(),x='longitude',y='latitude')
 plt.gca().plot(np.array(coord_list)[:,1],
-            np.array(coord_list)[:,0], marker='^', 
+            np.array(coord_list)[:,0], marker='^',
             ls='None', label='target',
             color='tab:red')
 # note that normally df_meta.sel(profile=ind) should work but there is currently
@@ -156,7 +156,7 @@ for ind in ind_list:
     df_density.loc[df_density.profile_key==ind,
             ['density', 'midpoint', 'profile_key']
         ].plot.scatter(
-            x='density', 
+            x='density',
             y='midpoint',
             )
     plt.gca().invert_yaxis()
@@ -166,15 +166,15 @@ for ind in ind_list:
             ind,
             df_meta.loc[ind, 'reference_short'],
             ))
-    
-    
+
+
 # %% Selecting data from a given source
 ref_target = 'GEUS snow and firn data (2023)'
-# finding the profiles that are in 
+# finding the profiles that are in
 
 df_meta_geus = df_meta.loc[df_meta.reference_short==ref_target]
 
-tmp = df_density.loc[df_density.profile_key.isin(df_meta_geus.index), 
+tmp = df_density.loc[df_density.profile_key.isin(df_meta_geus.index),
                      ['profile_key', 'timestamp']].drop_duplicates().set_index('profile_key')
 
 # plotting them on a map
@@ -196,14 +196,14 @@ except:
     found = False
 
 if found:
-    df_meta_geus = gpd.GeoDataFrame(df_meta_geus, 
+    df_meta_geus = gpd.GeoDataFrame(df_meta_geus,
                                     geometry=gpd.points_from_xy(
-                                        df_meta_geus['longitude'], 
+                                        df_meta_geus['longitude'],
                                         df_meta_geus['latitude']))
     df_meta_geus = df_meta_geus.set_crs(4326).to_crs(3413)
     land = gpd.read_file('ancil/greenland_land_3413.shp')
     ice = gpd.read_file('ancil/greenland_ice_3413.shp')
-    
+
     plt.figure()
     ax=plt.gca()
     land.plot(ax=ax, color='gray')
@@ -223,7 +223,7 @@ for ind in df_meta_geus.index:
             ['density', 'midpoint']
         ].plot(
             drawstyle="steps-mid",
-            x='density', 
+            x='density',
             y='midpoint',
             ax=ax[count],
             )
@@ -231,7 +231,11 @@ for ind in df_meta_geus.index:
     ax[count].set_xlim(200, 900)
     ax[count].grid()
     ax[count].get_legend().remove()
-    ax[count].set_title(df_meta_geus.loc[ind,'profile_name'],
+    if isinstance(df_meta_geus.loc[ind,'profile_name'], str):
+        ax[count].set_title(df_meta_geus.loc[ind,'profile_name'],
+        fontsize=8)
+    else:
+        ax[count].set_title(df_meta_geus.loc[ind,'profile_name'].iloc[0],
         fontsize=8)
     count += 1
     if count ==len(ax):
@@ -254,7 +258,7 @@ for ind in df_meta_geus_cores.index:
             ['density', 'midpoint']
         ].sort_values(by='midpoint').plot(
             drawstyle="steps-mid",
-            x='density', 
+            x='density',
             y='midpoint',
             ax=ax[count],
             )

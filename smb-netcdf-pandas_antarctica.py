@@ -18,6 +18,11 @@ df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_antarctica.nc',
                            group='DATA').to_dataframe()
 ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_antarctica.nc',
                            group='METADATA')
+decode_utf8 = np.vectorize(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+for v in ['name','reference','reference_short','method']:
+    ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
+
+
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
 df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values).astype(str)
@@ -187,4 +192,4 @@ print('\n and contains the following profiles')
 print(df_selec.name.drop_duplicates().values)
 
 print('\n from the following references')
-print(df_selec.reference.drop_duplicates().values)
+print(df_selec.reference_short.drop_duplicates().values)

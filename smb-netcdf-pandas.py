@@ -130,6 +130,9 @@ plt.legend()
 import matplotlib
 cmap = matplotlib.cm.get_cmap('tab10')
 
+# warning: this accumualtion is not appropriate for very short measurements or for the ablation area
+df_sumup['accumulation'] = df_sumup['smb'] / np.maximum(1,df_sumup.end_year-df_sumup.start_year)
+
 plt.figure()
 
 for count, ref in enumerate(df_meta_selec.reference_short.unique()):
@@ -142,13 +145,13 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
                     .sort_values(by='start_year')
                     .stack().reset_index().drop(columns='level_1')
                     .rename(columns={0:'year'}))
-        df_stack['smb'] = df_sumup.loc[df_stack.measurement_id, 'smb'].values
-        df_stack.plot(ax=plt.gca(), x='year', y='smb',
+        df_stack['accumulation'] = df_sumup.loc[df_stack.measurement_id, 'accumulation'].values
+        df_stack.plot(ax=plt.gca(), x='year', y='accumulation',
                       color = cmap(count),
                       label=label, alpha=0.7, legend=False
                       )
         plt.legend(loc='upper left')
-        plt.ylabel('SMB (m w.e. yr-1)')
+        plt.ylabel('accumulation (m w.e. yr-1)')
         label='_nolegend_'
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
 
@@ -183,4 +186,4 @@ print('\n and contains the following profiles')
 print(df_selec.name.drop_duplicates().values)
 
 print('\n from the following references')
-print(df_selec.reference.drop_duplicates().values)
+print(df_selec.reference_short.drop_duplicates().values)

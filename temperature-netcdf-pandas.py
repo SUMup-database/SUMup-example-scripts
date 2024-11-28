@@ -18,6 +18,10 @@ df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temp
                            group='DATA').to_dataframe()
 ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
                            group='METADATA')
+decode_utf8 = np.vectorize(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+for v in ['name','reference','reference_short','method']:
+    ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
+
 df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
 df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
 df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values).astype(str)
@@ -182,7 +186,7 @@ for date in ['2017-09-01','2024-09-01']:
     plt.legend()
     plt.ylim(70,0)
     plt.grid()
-    
+
 df_sumup_selec.loc[
     df_sumup_selec.timestamp.isin(pd.to_datetime(['2017-09-01','2024-09-01'])),
         ['timestamp','depth','temperature']].to_csv('CC_temperature_2017_2024.csv',index=False)

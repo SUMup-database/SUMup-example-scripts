@@ -13,19 +13,19 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import geopandas as gpd
 
-path_to_sumup = 'C:/Users/bav/OneDrive - Geological survey of Denmark and Greenland/Data/SUMup/'
-df_sumup = (pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_greenland.csv',
+path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/SUMup_2024_SMB_csv/'
+df_sumup = (pd.read_csv(path_to_sumup+'/SUMup_2024_SMB_greenland.csv',
                         low_memory=False)
             .rename(columns=dict(name='name_key', method='method_key', reference='reference_key')))
 
 
-df_methods = pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_methods.tsv', 
+df_methods = pd.read_csv(path_to_sumup+'/SUMup_2024_SMB_methods.tsv',
                          sep='\t').set_index('key').method
-df_names = pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_names.tsv', 
+df_names = pd.read_csv(path_to_sumup+'/SUMup_2024_SMB_names.tsv',
                          sep='\t').set_index('key').name
-df_references = pd.read_csv(path_to_sumup+'SUMup 2023 beta/SMB/csv/SUMup_2023_SMB_references.tsv', 
+df_references = pd.read_csv(path_to_sumup+'/SUMup_2024_SMB_references.tsv',
                          sep='\t').set_index('key')
-    
+
 df_sumup.loc[df_sumup.method_key.isnull(), 'method_key'] = -9999
 df_sumup['method'] = df_methods.loc[df_sumup.method_key].values
 df_sumup['name'] = df_names.loc[df_sumup.name_key].values
@@ -36,22 +36,22 @@ df_references.reference.loc[df_references.index.duplicated()]
 
 
 # selecting Greenland metadata measurements
-df_meta = df_sumup.loc[df_sumup.latitude>0, 
+df_meta = df_sumup.loc[df_sumup.latitude>0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
 
 # %% plotting in EPSG:4326
-ice = gpd.GeoDataFrame.from_file(path_to_sumup + "doc/GIS/greenland_ice_3413.shp")
-land = gpd.GeoDataFrame.from_file(path_to_sumup + "doc/GIS/greenland_land_3413.shp")
+ice = gpd.GeoDataFrame.from_file(path_to_sumup + "../../doc/GIS/greenland_ice_3413.shp")
+land = gpd.GeoDataFrame.from_file(path_to_sumup + "../../doc/GIS/greenland_land_3413.shp")
 
 plt.figure()
 land.to_crs(4326).plot(ax=plt.gca())
 ice.to_crs(4326).plot(ax=plt.gca(),color='lightblue')
-df_meta.plot(ax=plt.gca(), x='longitude', y='latitude', 
-        color='k', marker='.',ls='None', legend=False) 
+df_meta.plot(ax=plt.gca(), x='longitude', y='latitude',
+        color='k', marker='.',ls='None', legend=False)
 
-# %% Source selection and plotting in EPSG:3413 
+# %% Source selection and plotting in EPSG:3413
 # Note: the repojection of all the data points take a very long time
 
 # selecting Lewis airborne radar data using reference key
@@ -73,8 +73,8 @@ plt.figure()
 ax=plt.gca()
 land.plot(ax=ax)
 ice.plot(ax=ax,color='lightblue')
-gdf.plot(ax=ax,  
-        color='k', marker='.', legend=False) 
+gdf.plot(ax=ax,
+        color='k', marker='.', legend=False)
 ax.set_xticks([])
 ax.set_yticks([])
 plt.title('\n'.join(df_selec.reference_short.drop_duplicates()))
@@ -105,14 +105,14 @@ query_point = [[75.1, -42.32]] # NGRIP
 all_points = df_meta[['latitude', 'longitude']].values
 df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, get_distance)
 min_dist = 20 # in km
-df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]   
+df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]
 
 # plotting coordinates
 plt.figure()
 df_meta[['latitude','longitude']].plot.scatter(ax=plt.gca(),
                                                x='longitude',y='latitude')
 plt.gca().plot(np.array(query_point)[:,1],
-            np.array(query_point)[:,0], marker='^', 
+            np.array(query_point)[:,0], marker='^',
             ls='None', label='target',
             color='tab:red')
 df_meta_selec.plot(ax=plt.gca(), x='longitude', y='latitude',
