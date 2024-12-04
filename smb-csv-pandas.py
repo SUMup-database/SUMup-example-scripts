@@ -58,7 +58,7 @@ df_meta.plot(ax=plt.gca(), x='longitude', y='latitude',
 # first we can look at which references start with "Lewis"
 print(df_references.loc[df_references.reference.str.startswith('Lewis')])
 # we then use the key for Lewis et al. (2017)
-df_selec = df_meta.loc[df_meta.reference_key == 159, :].copy()
+df_selec = df_meta.loc[df_meta.reference_short == 'Lewis et al. (2017)', :].copy()
 
 gdf = (
     gpd.GeoDataFrame(df_selec, geometry=gpd.points_from_xy(df_selec.longitude, df_selec.latitude))
@@ -123,6 +123,11 @@ plt.legend()
 import matplotlib
 cmap = matplotlib.cm.get_cmap('tab10')
 
+
+# warning: this accumualtion is not appropriate for very short measurements or for the ablation area
+df_sumup['accumulation'] = df_sumup['smb'] / np.maximum(1,df_sumup.end_year-df_sumup.start_year)
+
+
 plt.figure()
 for count, ref in enumerate(df_meta_selec.reference_short.unique()):
     # each reference will be plotted in a different color
@@ -134,8 +139,8 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
                     .sort_values(by='start_year')
                     .stack().reset_index().drop(columns='level_1')
                     .rename(columns={0:'year'}))
-        df_stack['smb'] = df_sumup.loc[df_stack.level_0, 'smb'].values
-        df_stack.plot(ax=plt.gca(), x='year', y='smb',
+        df_stack['accumulation'] = df_sumup.loc[df_stack.level_0, 'accumulation'].values
+        df_stack.plot(ax=plt.gca(), x='year', y='accumulation',
                       color = cmap(count),
                       label=label, alpha=0.7, legend=False
                       )

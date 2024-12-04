@@ -133,6 +133,10 @@ cmap = matplotlib.cm.get_cmap('tab10')
 import matplotlib.pyplot as plt
 import numpy as np
 
+# warning: this accumualtion is not appropriate for very short measurements or for the ablation area
+df_sumup['accumulation'] = df_sumup['smb'] / np.maximum(1,df_sumup.end_year-df_sumup.start_year)
+
+
 plt.figure()
 
 for count, ref in enumerate(df_meta_selec.reference_short.unique()):
@@ -140,13 +144,13 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
     all_steps = []
 
     for n in df_meta_selec.loc[df_meta_selec.reference_short == ref, 'name'].unique():
-        df_stack = df_sumup.loc[df_sumup.name == n, ['start_year', 'end_year', 'smb']].sort_values(by='start_year')
+        df_stack = df_sumup.loc[df_sumup.name == n, ['start_year', 'end_year', 'accumulation']].sort_values(by='start_year')
 
         for _, row in df_stack.iterrows():
             # Append the step data
             all_steps.append((
                 [row['start_year'], row['end_year']],
-                [row['smb'] / (row['end_year'] - row['start_year'])] * 2
+                [row['accumulation']] * 2
             ))
 
     # Now plot all steps at once
