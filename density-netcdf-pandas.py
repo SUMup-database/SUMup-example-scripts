@@ -19,9 +19,11 @@ df_density = xr.open_dataset(
 ds_meta = xr.open_dataset(
     path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_density_greenland.nc',
     group='METADATA')
-decode_utf8 = np.vectorize(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+
+# more elegant decoding
 for v in ['profile','reference','reference_short','method']:
-    ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
+    ds_meta[v] = ds_meta[v].str.decode('utf-8')
+
 # ds_meta contain the meaning of profile_key, reference_key, method_key being
 # used in df_density
 
@@ -32,19 +34,10 @@ df_meta = df_density[
     ['profile_key','latitude','longitude','timestamp','reference_key','method_key']
     ].drop_duplicates()
 
-df_meta['profile_name'] = (ds_meta.profile
-                           .loc[dict(profile_key= df_meta.profile_key.values)]
-                                     .values)
-df_meta['method'] = (ds_meta.method
-                     .drop_duplicates(dim='method_key')  # this is due to a bug, will be fixed soon
-                     .loc[dict(method_key= df_meta.method_key.values)]
-                     .values)
-df_meta['reference'] = (ds_meta.reference
-                        .loc[dict(reference_key= df_meta.reference_key.values)]
-                        .values)
-df_meta['reference_short'] = (ds_meta.reference_short
-                              .loc[dict(reference_key= df_meta.reference_key.values)]
-                              .values)
+df_meta['profile_name'] = ds_meta.profile.sel(profile_key= df_meta.profile_key.values)
+df_meta['method'] = ds_meta.method.sel(method_key= df_meta.method_key.values)
+df_meta['reference'] = ds_meta.reference.sel(reference_key= df_meta.reference_key.values)
+df_meta['reference_short'] = ds_meta.reference_short.sel(reference_key= df_meta.reference_key.values)
 df_meta = df_meta.set_index('profile_key')
 
 

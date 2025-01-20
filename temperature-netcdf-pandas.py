@@ -12,29 +12,33 @@ import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
 import geopandas as gpd
+from tqdm import tqdm
 
 path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
 df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
                            group='DATA').to_dataframe()
 ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
                            group='METADATA')
-decode_utf8 = np.vectorize(lambda x: x.decode('utf-8') if isinstance(x, bytes) else x)
+
+# decoding strings as utf-8
 for v in ['name','reference','reference_short','method']:
-    ds_meta[v] = xr.DataArray(decode_utf8(ds_meta[v].values), dims=ds_meta[v].dims)
+    ds_meta[v] = ds_meta[v].str.decode('utf-8')
 
-df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
-ds_meta['method_key'] = ds_meta['method_key'].fillna(-9999)
+# df_sumup.method_key = df_sumup.method_key.replace(np.nan,-9999)
+df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values)
+df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values)
 
-df_sumup['method'] = ds_meta.method.sel(method_key = df_sumup.method_key.values).astype(str)
-df_sumup['name'] = ds_meta.name.sel(name_key = df_sumup.name_key.values).astype(str)
+
+df_sumup['reference'] = None  # Initialize the column
+for key in tqdm(ds_meta.reference['reference_key'].values):
+    df_sumup.loc[df_sumup['reference_key'] == key, 'reference'] = ds_meta.reference.sel(reference_key=key).item()
+
 df_sumup['reference'] = (ds_meta.reference
-                         .drop_duplicates(dim='reference_key')
-                         .sel(reference_key=df_sumup.reference_key.values)
-                         .astype(str))
+                          .drop_duplicates(dim='reference_key')
+                          .sel(reference_key=df_sumup.reference_key.values))
 df_sumup['reference_short'] = (ds_meta.reference_short
                          .drop_duplicates(dim='reference_key')
-                         .sel(reference_key=df_sumup.reference_key.values)
-                         .astype(str))
+                         .sel(reference_key=df_sumup.reference_key.values))
 df_ref = ds_meta.reference.to_dataframe()
 
 # selecting Greenland metadata measurements
@@ -42,6 +46,8 @@ df_meta = df_sumup.loc[df_sumup.latitude>0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
+
+
 
 # %% plotting latitude lontgitudes
 ice = gpd.GeoDataFrame.from_file(path_to_SUMup_folder + "doc/GIS/greenland_ice_3413.shp")

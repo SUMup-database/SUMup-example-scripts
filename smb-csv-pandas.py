@@ -41,6 +41,11 @@ df_meta = df_sumup.loc[df_sumup.latitude>0,
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
 
+df_sumup = df_sumup.loc[df_sumup.start_year>2002,:]
+df_sumup = df_sumup.loc[~df_sumup.method.str.contains('radar'),:]
+# warning: this accumualtion is not appropriate for very short measurements or for the ablation area
+df_sumup['accumulation'] = df_sumup['smb'] / np.maximum(1,df_sumup.end_year-df_sumup.start_year)
+
 # %% plotting in EPSG:4326
 ice = gpd.GeoDataFrame.from_file(path_to_sumup + "../../doc/GIS/greenland_ice_3413.shp")
 land = gpd.GeoDataFrame.from_file(path_to_sumup + "../../doc/GIS/greenland_land_3413.shp")
@@ -122,17 +127,18 @@ plt.legend()
 # %% plotting individual smb records
 import matplotlib
 cmap = matplotlib.cm.get_cmap('tab10')
-
-
-# warning: this accumualtion is not appropriate for very short measurements or for the ablation area
-df_sumup['accumulation'] = df_sumup['smb'] / np.maximum(1,df_sumup.end_year-df_sumup.start_year)
-
+from tqdm import tqdm
 
 plt.figure()
+
 for count, ref in enumerate(df_meta_selec.reference_short.unique()):
     # each reference will be plotted in a different color
     label = ref
-    for n in df_meta_selec.loc[df_meta_selec.reference_short==ref, 'name'].unique():
+    list_names=df_meta_selec.loc[df_meta_selec.reference_short == ref, 'name'].unique()
+    if len(list_names)>100:
+        # to speed up plotting, we only show 100 measurements
+        list_names = list_names[np.linspace(0, len(list_names) - 1, 100, dtype=int)]
+    for n in tqdm(list_names, desc=ref):
         # for each core or each point along a radar transect, a separate line needs
         # to be plotted
         df_stack = (df_sumup.loc[df_sumup.name==n,['start_year','end_year']]
@@ -140,11 +146,17 @@ for count, ref in enumerate(df_meta_selec.reference_short.unique()):
                     .stack().reset_index().drop(columns='level_1')
                     .rename(columns={0:'year'}))
         df_stack['accumulation'] = df_sumup.loc[df_stack.level_0, 'accumulation'].values
-        df_stack.plot(ax=plt.gca(), x='year', y='accumulation',
-                      color = cmap(count),
-                      label=label, alpha=0.7, legend=False
-                      )
+        for meas_id in np.unique(df_stack.level_0):
+            df_meas=df_stack.loc[df_stack.level_0==meas_id,:]
+            if df_meas.iloc[1,1]==df_meas.year.iloc[0]:
+                df_meas.iloc[1,1]=df_meas.year.iloc[0]+1
+            df_meas.plot(
+                ax=plt.gca(), x='year', y='accumulation',
+                          color = cmap(count),
+                          label=label if meas_id==df_stack.level_0[0] else '_nolegend_',
+                          alpha=0.7, legend=False
+                          )
         plt.legend(loc='upper left')
-        plt.ylabel('SMB (m w.e. yr-1)')
+        plt.ylabel('accumulation (m w.e. yr-1)')
         label='_nolegend_'
 plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
