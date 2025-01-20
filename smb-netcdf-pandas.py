@@ -16,7 +16,6 @@ import geopandas as gpd
 path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/'
 df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc',
                            group='DATA', lock=False).to_dataframe()
-df_sumup = df_sumup.loc[(df_sumup.latitude>0)&(df_sumup.start_year>1990)]
 ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc',
                            group='METADATA', lock=False)
 
