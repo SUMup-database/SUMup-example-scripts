@@ -41,8 +41,6 @@ df_meta = df_sumup.loc[df_sumup.latitude>0,
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
 
-df_sumup = df_sumup.loc[df_sumup.start_year>2002,:]
-df_sumup = df_sumup.loc[~df_sumup.method.str.contains('radar'),:]
 # warning: this accumualtion is not appropriate for very short measurements or for the ablation area
 df_sumup['accumulation'] = df_sumup['smb'] / np.maximum(1,df_sumup.end_year-df_sumup.start_year)
 
