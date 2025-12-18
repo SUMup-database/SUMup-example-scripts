@@ -11,22 +11,22 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import geopandas as gpd
-path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
+path_to_sumup = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup-data/2025/SUMup_2025_temperature_csv/'
 
-df_sumup = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_greenland.csv')
+df_sumup = pd.read_csv(path_to_sumup + 'SUMup_2025_temperature_greenland.csv')
 df_sumup = df_sumup.rename(columns={'name':'name_key',
                             'reference':'reference_key',
                             'method':'method_key'})
 df_sumup['timestamp'] = pd.to_datetime(df_sumup.timestamp)
 
-df_methods = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_methods.tsv', 
-                         sep='\t').set_index('key')
-df_names = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_names.tsv', 
-                         sep='\t').set_index('key')
-df_references = pd.read_csv(path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_temperature_csv/SUMup_2024_temperature_references.tsv', 
-                         sep='\t').set_index('key')
+df_methods = pd.read_csv(path_to_sumup + 'SUMup_2025_temperature_methods.tsv',
+                         sep='\t').set_index('method_key')
+df_names = pd.read_csv(path_to_sumup + 'SUMup_2025_temperature_names.tsv',
+                         sep='\t').set_index('name_key')
+df_references = pd.read_csv(path_to_sumup + 'SUMup_2025_temperature_references.tsv',
+                         sep='\t').set_index('reference_key')
 
-# % creating a metadata frame 
+# % creating a metadata frame
 # that contains the important information of all unique locations
 df_meta = (df_sumup[['name_key','latitude','longitude','reference_key','method_key']]
            .drop_duplicates())
@@ -42,8 +42,8 @@ df_meta[df_meta==-9999] = np.nan
 
 
 # %% plotting latitude lontgitudes
-ice = gpd.GeoDataFrame.from_file(path_to_SUMup_folder + "doc/GIS/greenland_ice_3413.shp")
-land = gpd.GeoDataFrame.from_file(path_to_SUMup_folder + "doc/GIS/greenland_land_3413.shp")
+ice = gpd.GeoDataFrame.from_file("ancil/greenland_ice_3413.shp")
+land = gpd.GeoDataFrame.from_file("ancil/greenland_land_3413.shp")
 
 plt.figure()
 land.to_crs(4326).plot(ax=plt.gca())
@@ -58,7 +58,7 @@ df_meta.loc[df_meta.latitude>0, ['latitude','longitude']].plot.scatter(
 # df_meta.loc[df_meta.latitude<0, ['latitude','longitude']].plot.scatter(
 #     ax=plt.gca(), x='longitude',y='latitude', color='k', marker='.')
 
-# %% Plotting in EPSG:3413 
+# %% Plotting in EPSG:3413
 # Note: the repojection of all the data points take a very long time
 df_gr =df_meta.loc[df_meta.latitude>0]
 
@@ -75,8 +75,8 @@ plt.figure()
 ax=plt.gca()
 land.plot(ax=ax)
 ice.plot(ax=ax,color='lightblue')
-df_gr.plot(ax=ax,  
-        color='k', marker='.', legend=False) 
+df_gr.plot(ax=ax,
+        color='k', marker='.', legend=False)
 ax.set_xticks([])
 ax.set_yticks([])
 
@@ -95,8 +95,8 @@ ax.set_yticks([])
 # plt.figure()
 # ax=plt.gca()
 # ant_land.to_crs(3031).plot(ax=ax, color='lightblue')
-# df_ant.plot(ax=ax,  
-#         color='k', marker='.', legend=False) 
+# df_ant.plot(ax=ax,
+#         color='k', marker='.', legend=False)
 # ax.set_xticks([])
 # ax.set_yticks([])
 
@@ -127,7 +127,7 @@ query_point = [
 all_points = df_meta[['latitude', 'longitude']].values
 df_meta['distance_from_query_point'] = distance.cdist(all_points, query_point, get_distance)
 min_dist = 20 # in km
-df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]   
+df_meta_selec = df_meta.loc[df_meta.distance_from_query_point<min_dist, :]
 
 # plotting coordinates
 plt.figure()
@@ -136,7 +136,7 @@ df_meta[['latitude','longitude']].plot.scatter(ax=plt.gca(),
                                                marker='.',
                                                label='all points')
 plt.gca().plot(np.array(query_point)[:,1],
-            np.array(query_point)[:,0], marker='^', 
+            np.array(query_point)[:,0], marker='^',
             ls='None', label='target',
             color='tab:red')
 df_meta_selec.plot(ax=plt.gca(), x='longitude', y='latitude',
@@ -167,7 +167,7 @@ plt.title('Observations within '+str(min_dist)+' km of '+str(query_point))
 df_sumup_selec = df_sumup.loc[df_sumup.name_key.isin(df_meta_selec.index)]
 plt.figure()
 sc = plt.scatter(df_sumup_selec.timestamp.values,
-                 -df_sumup_selec.depth, 50, 
+                 -df_sumup_selec.depth, 50,
                  df_sumup_selec.temperature)
 plt.colorbar(sc)
 plt.grid()

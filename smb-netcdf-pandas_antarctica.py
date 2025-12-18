@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import geopandas as gpd
 
-path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/'
-df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_antarctica.nc',
+path_to_sumup = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup-data/2025/'
+df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2025_SMB_antarctica.nc',
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_antarctica.nc',
+ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2025_SMB_antarctica.nc',
                            group='METADATA')
 # decoding strings as utf-8
 for v in ['name','reference','reference_short','method']:
@@ -36,6 +36,57 @@ df_meta = df_sumup.loc[df_sumup.latitude<0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
+# %%
+g = (df_sumup[df_sumup.latitude<0]
+     .groupby(['method',
+               'reference_short','reference','reference_key']))
+
+df_out = pd.DataFrame({
+    'n_rows'   : g.size(),
+    'start_min': g.start_year.min().astype(int),
+    'end_max'  : g.end_year.max().astype(int)
+}).reset_index()
+
+df_out['bibtex_key'] = ''
+df_bib = pd.read_csv(
+    'C:/Users/bav/GitHub/SUMup/SUMup-compilation-scripts/data/references_with_bibtex_key.tsv',
+    sep='\t'
+)
+from tqdm import tqdm
+# df_rest = df_out.iloc[i:]
+for i, row in tqdm(df_out.iterrows(), total=len(df_out)):
+    short = row.reference_short
+    long  = row.reference
+    key  = row.reference_key
+
+    m1 = df_bib[df_bib.reference_short.str.contains(short, na=False, regex=False)]
+    if len(m1)==1:
+        df_out.at[i,'bibtex_key'] = m1.bibtex_key.values[0]
+        continue
+    elif len(m1)>1:
+        m1 = m1.loc[m1.reference_short.str.startswith(short.split(' ')[0]), :]
+        df_out.at[i,'bibtex_key'] = m1.bibtex_key.values[0]
+        continue
+
+    m2 = df_bib[df_bib.reference.str.contains(long, na=False, regex=False)]
+    if len(m2)==1:
+        df_out.at[i,'bibtex_key'] = m2.bibtex_key.values[0]
+        continue
+
+    print("### missing bibtex:", key, short, long)
+
+latex_table = (
+    df_out
+    .assign(Period=df_out['start_min'].astype(str) + "--" + df_out['end_max'].astype(str))
+    .assign(Reference=r'\citet{'+df_out['bibtex_key'].astype(str).replace(' ',', ') + "}")
+    [['Reference', 'Period', 'n_rows', 'method', ]]
+    .rename(columns={'method':'Method', 'n_rows': 'number of observations'})
+    .to_latex(index=False, column_format='l|l|l|l', escape=False)
+)
+
+with open('sumup_table.txt', 'w', encoding='utf-8') as f:
+    f.write(latex_table)
+
 
 # %% plotting in EPSG:4326
 ice = gpd.GeoDataFrame.from_file("ancil/Medium_resolution_vector_polygons_of_the_Antarctic_coastline.shp")

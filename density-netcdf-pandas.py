@@ -12,33 +12,34 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
+path_to_SUMup_folder = 'data/'
 df_density = xr.open_dataset(
-    path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_density_greenland.nc',
+    path_to_SUMup_folder+'SUMup_2024_density_greenland.nc',
     group='DATA').to_dataframe()
 
 ds_meta = xr.open_dataset(
-    path_to_SUMup_folder + 'SUMup 2024 beta/SUMup_2024_density_greenland.nc',
+    path_to_SUMup_folder + 'SUMup_2024_density_greenland.nc',
     group='METADATA')
 
 # more elegant decoding
-for v in ['profile','reference','reference_short','method']:
+for v in ['name','reference','reference_short','method']:
     ds_meta[v] = ds_meta[v].str.decode('utf-8')
 
-# ds_meta contain the meaning of profile_key, reference_key, method_key being
+# ds_meta contain the meaning of name_key, reference_key, method_key being
 # used in df_density
 
 # % creating a metadata frame
 # that contains, for each unique location, the important information
 # (lat/lon, reference...)
 df_meta = df_density[
-    ['profile_key','latitude','longitude','timestamp','reference_key','method_key']
+    ['name_key','latitude','longitude','timestamp','reference_key','method_key']
     ].drop_duplicates()
 
-df_meta['profile_name'] = ds_meta.profile.sel(profile_key= df_meta.profile_key.values)
+df_meta['name_name'] = ds_meta.name.sel(name_key= df_meta.name_key.values)
 df_meta['method'] = ds_meta.method.sel(method_key= df_meta.method_key.values)
 df_meta['reference'] = ds_meta.reference.sel(reference_key= df_meta.reference_key.values)
 df_meta['reference_short'] = ds_meta.reference_short.sel(reference_key= df_meta.reference_key.values)
-df_meta = df_meta.set_index('profile_key')
+df_meta = df_meta.set_index('name_key')
 
 
 # %% plotting latitude lontgitudes
@@ -47,8 +48,8 @@ df_meta[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
 # %% plotting the 10 first profiles
 for ind in df_meta.index[:10]:
     plt.figure()
-    df_density.loc[df_density.profile_key==ind,
-            ['density', 'midpoint', 'profile_key']
+    df_density.loc[df_density.name_key==ind,
+            ['density', 'midpoint', 'name_key']
         ].plot.scatter(
             x='density',
             y='midpoint',
@@ -56,7 +57,7 @@ for ind in df_meta.index[:10]:
     plt.gca().invert_yaxis()
     plt.title(
         "Profile %s (nr. %i)\nfrom %s"%(
-            df_meta.loc[ind, 'profile_name'],
+            df_meta.loc[ind, 'name_name'],
             ind,
             df_meta.loc[ind, 'reference_short'],
             ))
@@ -75,14 +76,14 @@ df_meta_south[['latitude','longitude']].plot(ax=plt.gca(), x='longitude',y='lati
 plt.legend()
 # we can isolate the density data for those southern profiles
 df_density_south = df_density.loc[
-    df_density.profile_key.isin(df_meta_south.index)].copy()
+    df_density.name_key.isin(df_meta_south.index)].copy()
 # but we could also continue with df_density and only use profiles from df_meta_south
 
 # %% plotting the 10 first southern profiles
 for ind in df_meta_south.index[:10]:
     plt.figure()
-    df_density.loc[df_density.profile_key==ind,
-            ['density', 'midpoint', 'profile_key']
+    df_density.loc[df_density.name_key==ind,
+            ['density', 'midpoint', 'name_key']
         ].plot.scatter(
             x='density',
             y='midpoint',
@@ -90,7 +91,7 @@ for ind in df_meta_south.index[:10]:
     plt.gca().invert_yaxis()
     plt.title(
         "Profile %s (nr. %i)\nfrom %s"%(
-            df_meta.loc[ind, 'profile_name'],
+            df_meta.loc[ind, 'name_name'],
             ind,
             df_meta.loc[ind, 'reference_short'],
             ))
@@ -164,38 +165,38 @@ plt.legend()
 # plotting profiles
 for ind in ind_list:
     plt.figure()
-    df_density.loc[df_density.profile_key==ind,
-            ['density', 'midpoint', 'profile_key']
+    df_density.loc[df_density.name_key==ind,
+            ['density', 'midpoint', 'name_key']
         ].plot.scatter(
             x='density',
             y='midpoint',
             )
     plt.gca().invert_yaxis()
     plt.title(
-        "Profile %s (nr. %i)\nfrom %s"%(
-            df_meta.loc[ind, 'profile_name'],
+        "name %s (nr. %i)\nfrom %s"%(
+            df_meta.loc[ind, 'name_name'],
             ind,
             df_meta.loc[ind, 'reference_short'],
             ))
 
 
 # %% Selecting data from a given source
-ref_target = 'GEUS snow and firn data (2023)'
+ref_target = 'Miège et al. (2013)'
 # finding the profiles that are in
 
-df_meta_geus = df_meta.loc[df_meta.reference_short==ref_target]
+df_meta_selec = df_meta.loc[df_meta.reference_short==ref_target]
 
-tmp = df_density.loc[df_density.profile_key.isin(df_meta_geus.index),
-                     ['profile_key', 'timestamp']].drop_duplicates().set_index('profile_key')
+tmp = df_density.loc[df_density.name_key.isin(df_meta_selec.index),
+                     ['name_key', 'timestamp']].drop_duplicates().set_index('name_key')
 
 # plotting them on a map
-df_meta_geus[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
+df_meta_selec[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
 # if you want to add (overlapping) labels
-# for k, v in df_meta_geus[['longitude','latitude','profile_name']].drop_duplicates(
-#         subset='profile_name'
-#         ).set_index('profile_name').iterrows():
+# for k, v in df_meta_selec[['longitude','latitude','name_name']].drop_duplicates(
+#         subset='name_name'
+#         ).set_index('name_name').iterrows():
 #     plt.annotate(k, v)
-plt.title('GEUS snow profiles')
+plt.title('GEUS snow names')
 # more advanced: switch to epsg:3413 projection and add background
 try:
     import geopandas as gpd
@@ -207,11 +208,11 @@ except:
     found = False
 
 if found:
-    df_meta_geus = gpd.GeoDataFrame(df_meta_geus,
+    df_meta_selec = gpd.GeoDataFrame(df_meta_selec,
                                     geometry=gpd.points_from_xy(
-                                        df_meta_geus['longitude'],
-                                        df_meta_geus['latitude']))
-    df_meta_geus = df_meta_geus.set_crs(4326).to_crs(3413)
+                                        df_meta_selec['longitude'],
+                                        df_meta_selec['latitude']))
+    df_meta_selec = df_meta_selec.set_crs(4326).to_crs(3413)
     land = gpd.read_file('ancil/greenland_land_3413.shp')
     ice = gpd.read_file('ancil/greenland_ice_3413.shp')
 
@@ -219,7 +220,7 @@ if found:
     ax=plt.gca()
     land.plot(ax=ax, color='gray')
     ice.plot(ax=ax, color='lightblue')
-    df_meta_geus.plot(ax=ax, color='k', marker='^')
+    df_meta_selec.plot(ax=ax, color='k', marker='^')
     ax.set_title('GEUS snow profiles')
     ax.axis('off')
 
@@ -228,20 +229,20 @@ plt.close('all')
 fig, ax = plt.subplots(2,8,sharex=True,sharey=True)
 ax=ax.flatten()
 count=0
-df_meta_geus = df_meta_geus.loc[df_meta_geus.profile_name.str.contains('GC-Net_'),:]
-df_meta_geus['site'] = df_meta_geus.profile_name.str.split('_').str[1].str.split('_').str[0].str.split(' ').str[0]
+df_meta_selec = df_meta_selec.loc[df_meta_selec.name_name.str.contains('GC-Net_'),:]
+df_meta_selec['site'] = df_meta_selec.name_name.str.split('_').str[1].str.split('_').str[0].str.split(' ').str[0]
 for year in range(2022,2025):
     print(year)
-    for site in np.unique(df_meta_geus.loc[df_meta_geus.timestamp.dt.year==year,'site']):
-        tmp_site = df_meta_geus.loc[
-            (df_meta_geus.site==site)&(df_meta_geus.timestamp.dt.year==year), :]
+    for site in np.unique(df_meta_selec.loc[df_meta_selec.timestamp.dt.year==year,'site']):
+        tmp_site = df_meta_selec.loc[
+            (df_meta_selec.site==site)&(df_meta_selec.timestamp.dt.year==year), :]
         print('    ',site)
         for ind in tmp_site.index:
-            print('        ', df_meta_geus.loc[ind,'profile_name'])
-            data = df_density.loc[df_density.profile_key==ind,
+            print('        ', df_meta_selec.loc[ind,'name_name'])
+            data = df_density.loc[df_density.name_key==ind,
                     ['density', 'midpoint']
                 ].sort_values(by='midpoint')
-            if 'core' in df_meta_geus.loc[[ind],'profile_name'].to_list()[0].lower():
+            if 'core' in df_meta_selec.loc[[ind],'name_name'].to_list()[0].lower():
                 method= 'core'
             else:
                 method='snowpit'
@@ -258,11 +259,11 @@ for year in range(2022,2025):
         ax[count].grid()
         ax[count].legend()
         ax[count].set_title(site+' '+str(year))
-        # if isinstance(df_meta_geus.loc[ind,'profile_name'],str):
-        #     ax[count].set_title(df_meta_geus.loc[ind,'profile_name'],
+        # if isinstance(df_meta_selec.loc[ind,'name_name'],str):
+        #     ax[count].set_title(df_meta_selec.loc[ind,'name_name'],
         #         fontsize=8)
         # else:
-        #     ax[count].set_title(np.unique(df_meta_geus.loc[ind,'profile_name'].values),
+        #     ax[count].set_title(np.unique(df_meta_selec.loc[ind,'name_name'].values),
         #     fontsize=8)
         count += 1
         if count ==len(ax):
@@ -271,7 +272,7 @@ for year in range(2022,2025):
             count=0
 
 # %% plot only the cores
-df_meta_geus_cores = df_meta_geus.loc[df_meta_geus.profile_name.str.lower().str.contains('core'),:]
+df_meta_geus_cores = df_meta_geus.loc[df_meta_geus.name_name.str.lower().str.contains('core'),:]
 plt.close('all')
 
 fig, ax = plt.subplots(4,5,figsize=(15,10),
@@ -280,8 +281,8 @@ ax=ax.flatten()
 ax[0].invert_yaxis()
 count=0
 for ind in df_meta_geus_cores.index:
-    print(df_meta_geus_cores.loc[ind,'profile_name'])
-    df_density.loc[df_density.profile_key==ind,
+    print(df_meta_geus_cores.loc[ind,'name_name'])
+    df_density.loc[df_density.name_key==ind,
             ['density', 'midpoint']
         ].sort_values(by='midpoint').plot(
             drawstyle="steps-mid",
@@ -294,7 +295,7 @@ for ind in df_meta_geus_cores.index:
     ax[count].set_ylabel('Depth (m)')
     ax[count].grid()
     ax[count].get_legend().remove()
-    ax[count].set_title(df_meta_geus.loc[ind,'profile_name'],
+    ax[count].set_title(df_meta_geus.loc[ind,'name_name'],
         fontsize=11)
     count += 1
     if count ==len(ax):
@@ -302,3 +303,74 @@ for ind in df_meta_geus_cores.index:
         ax=ax.flatten()
         ax[0].invert_yaxis()
         count=0
+
+# %% Selecting data from a given source
+ref_target = 'Miège et al. (2013)'
+# finding the profiles that are in
+
+df_meta_selec = df_meta.loc[df_meta.reference_short==ref_target]
+
+tmp = df_density.loc[df_density.name_key.isin(df_meta_selec.index),
+                     ['name_key', 'timestamp']].drop_duplicates().set_index('name_key')
+
+# plotting them on a map
+df_meta_selec[['latitude','longitude']].plot.scatter(x='longitude',y='latitude')
+# if you want to add (overlapping) labels
+# for k, v in df_meta_selec[['longitude','latitude','name_name']].drop_duplicates(
+#         subset='profile_name'
+#         ).set_index('profile_name').iterrows():
+#     plt.annotate(k, v)
+plt.title('GEUS snow profiles')
+# more advanced: switch to epsg:3413 projection and add background
+try:
+    import geopandas as gpd
+    found = True
+except:
+    print('>>> Warning: geopandas package was not found.')
+    print('Please install geopandas for reprojected maps.')
+    print('Skipping this part.')
+    found = False
+
+if found:
+    df_meta_selec = gpd.GeoDataFrame(df_meta_selec,
+                                    geometry=gpd.points_from_xy(
+                                        df_meta_selec['longitude'],
+                                        df_meta_selec['latitude']))
+    df_meta_selec = df_meta_selec.set_crs(4326).to_crs(3413)
+    land = gpd.read_file('ancil/greenland_land_3413.shp')
+    ice = gpd.read_file('ancil/greenland_ice_3413.shp')
+
+    plt.figure()
+    ax=plt.gca()
+    land.plot(ax=ax, color='gray')
+    ice.plot(ax=ax, color='lightblue')
+    df_meta_selec.plot(ax=ax, color='k', marker='^')
+    ax.set_title('GEUS snow profiles')
+    ax.axis('off')
+
+#  Plotting recent profiles that have, for most sites a snowpit and a firn core
+plt.close('all')
+fig, ax = plt.subplots(1,len(df_meta_selec.index),sharex=True,sharey=True)
+ax=ax.flatten()
+count=0
+
+for ind in df_meta_selec.index:
+    name  = df_meta_selec.loc[ind, 'profile_name']
+    print('        ', df_meta_selec.loc[ind,'profile_name'])
+    data = df_density.loc[df_density.profile_key==ind,
+            ['density', 'midpoint']
+        ].sort_values(by='midpoint')
+
+    data.plot(
+            drawstyle="steps-mid",
+            x='density',
+            y='midpoint',
+            ax=ax[count],
+            label='__nolegend__'
+            )
+
+    ax[count].set_xlim(300, 950)
+    ax[count].set_ylim(50, 0)
+    ax[count].grid()
+    ax[count].set_title(name)
+    count+=1

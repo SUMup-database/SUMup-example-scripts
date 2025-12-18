@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import geopandas as gpd
 
-path_to_sumup = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/SUMup 2024 beta/'
-df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc',
+path_to_sumup = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup-data/2025/'
+df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2025_SMB_greenland.nc',
                            group='DATA', lock=False).to_dataframe()
-ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_greenland.nc',
+ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2025_SMB_greenland.nc',
                            group='METADATA', lock=False)
 
 # decoding strings as utf-8
