@@ -13,10 +13,10 @@ import matplotlib.pyplot as plt
 import xarray as xr
 import geopandas as gpd
 
-path_to_sumup = './data/'
-df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_antarctica.nc',
+path_to_sumup = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup-data/2025/'
+df_sumup = xr.open_dataset(path_to_sumup+'/SUMup_2025_SMB_antarctica.nc',
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2024_SMB_antarctica.nc',
+ds_meta = xr.open_dataset(path_to_sumup+'/SUMup_2025_SMB_antarctica.nc',
                            group='METADATA')
 # decoding strings as utf-8
 for v in ['name','reference','reference_short','method']:
@@ -36,7 +36,7 @@ df_meta = df_sumup.loc[df_sumup.latitude<0,
                   ['latitude', 'longitude', 'name_key', 'name', 'method_key',
                    'reference_short','reference', 'reference_key']
                   ].drop_duplicates()
-# %% 
+# %%
 g = (df_sumup[df_sumup.latitude<0]
      .groupby(['method',
                'reference_short','reference','reference_key']))

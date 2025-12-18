@@ -14,10 +14,10 @@ import xarray as xr
 import geopandas as gpd
 from tqdm import tqdm
 
-path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
-df_sumup = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
+path_to_sumup = 'C:/Users/bav/OneDrive - GEUS/Data/SUMup-data/2025/'
+df_sumup = xr.open_dataset(path_to_sumup+'SUMup_2025_temperature_greenland.nc',
                            group='DATA').to_dataframe()
-ds_meta = xr.open_dataset(path_to_SUMup_folder+'SUMup 2024 beta/SUMup_2024_temperature_greenland.nc',
+ds_meta = xr.open_dataset(path_to_sumup+'SUMup_2025_temperature_greenland.nc',
                            group='METADATA')
 
 # decoding strings as utf-8
@@ -50,8 +50,8 @@ df_meta = df_sumup.loc[df_sumup.latitude>0,
 
 
 # %% plotting latitude lontgitudes
-ice = gpd.GeoDataFrame.from_file(path_to_SUMup_folder + "doc/GIS/greenland_ice_3413.shp")
-land = gpd.GeoDataFrame.from_file(path_to_SUMup_folder + "doc/GIS/greenland_land_3413.shp")
+ice = gpd.GeoDataFrame.from_file("ancil/greenland_ice_3413.shp")
+land = gpd.GeoDataFrame.from_file("ancil/greenland_land_3413.shp")
 
 plt.figure()
 land.to_crs(4326).plot(ax=plt.gca())
@@ -88,13 +88,14 @@ df_gr.plot(ax=ax,
 ax.set_xticks([])
 ax.set_yticks([])
 
-# # for antarctica
+# # %% for antarctica
+# ant_land = gpd.GeoDataFrame.from_file("ancil/Medium_resolution_vector_polygons_of_the_Antarctic_coastline.shp")
+
 # df_ant =df_meta.loc[df_meta.latitude<0]
 
 # df_ant = (
 #     gpd.GeoDataFrame(df_ant, geometry=gpd.points_from_xy(df_ant.longitude, df_ant.latitude))
-#     .set_crs(4326)
-#     .to_crs(3031)
+#     .set_crs(4326).to_crs(3031)
 # )
 
 # df_ant['x_3413'] = df_ant.geometry.x.values
@@ -103,8 +104,7 @@ ax.set_yticks([])
 # plt.figure()
 # ax=plt.gca()
 # ant_land.to_crs(3031).plot(ax=ax, color='lightblue')
-# df_ant.plot(ax=ax,
-#         color='k', marker='.', legend=False)
+# df_ant.plot(ax=ax, color='k', marker='.', legend=False)
 # ax.set_xticks([])
 # ax.set_yticks([])
 
@@ -192,10 +192,6 @@ for date in ['2017-09-01','2024-09-01']:
     plt.legend()
     plt.ylim(70,0)
     plt.grid()
-
-df_sumup_selec.loc[
-    df_sumup_selec.timestamp.isin(pd.to_datetime(['2017-09-01','2024-09-01'])),
-        ['timestamp','depth','temperature']].to_csv('CC_temperature_2017_2024.csv',index=False)
 
 # %% Interpoalting temperature at fixed depth
 import pandas as pd
