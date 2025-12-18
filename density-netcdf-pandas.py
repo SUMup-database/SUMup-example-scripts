@@ -11,14 +11,13 @@ import xarray as xr
 import matplotlib.pyplot as plt
 import numpy as np
 
-path_to_SUMup_folder = 'C:/Users/bav/GitHub/SUMup/SUMup-2024/'
-path_to_SUMup_folder = 'data/'
+path_to_SUMup_folder = '../2025/'
 df_density = xr.open_dataset(
-    path_to_SUMup_folder+'SUMup_2024_density_greenland.nc',
+    path_to_SUMup_folder+'SUMup_2025_density_greenland.nc',
     group='DATA').to_dataframe()
 
 ds_meta = xr.open_dataset(
-    path_to_SUMup_folder + 'SUMup_2024_density_greenland.nc',
+    path_to_SUMup_folder + 'SUMup_2025_density_greenland.nc',
     group='METADATA')
 
 # more elegant decoding
